@@ -20,6 +20,8 @@
 		{
 			u_char des_mac[6];
 			u_char src_mac[6];
+			u_char src_ip[6];
+			u_char des_ip[6];
 		} packet;
 
 
@@ -80,6 +82,27 @@
 					pkt_data++;
 				}
 
+				pkt_data += 14;
+
+				//printf("---%d---\n",*pkt_data );
+
+
+				for(int j=0;j<=3;j++)
+				{
+
+					packet.src_ip[j] = *(pkt_data);
+					pkt_data++;
+
+				}
+
+				for(int j=0;j<=3;j++)
+				{
+
+					packet.des_ip[j] = *(pkt_data);
+					pkt_data++;
+
+				}
+
 
 
 				for(int j=0;j<=5;j++)
@@ -96,6 +119,21 @@
 				
 				}
 				printf("\n");
+
+				for(int j=0;j<=3;j++)
+				{
+					printf("%d.", (packet.src_ip[j]));
+				
+				}
+				printf("\n");
+
+				for(int j=0;j<=3;j++)
+				{
+					printf("%d.", (packet.des_ip[j]));
+				
+				}
+				printf("\n");
+
 
 			}
 
@@ -121,4 +159,5 @@
 		return(0);
 
 
+	 
 	 }
