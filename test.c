@@ -27,6 +27,7 @@
 			u_char src_port[2];
 			u_char des_port[2];
 			u_char chack_tcp[1];
+			u_char tcp_len[1];
 		} packet;
 
 
@@ -128,10 +129,21 @@
 
 				packet.chack_tcp[0] = *(pkt_data+23);
 
-				printf("%02x\n",packet.chack_tcp[0]);
+				//printf("%02x\n",packet.chack_tcp[0]);
 
-				if(0x06==(long)packet.chack_tcp)
+				if(0x06==(long)packet.chack_tcp[0])
+				{
 					printf("TCP");
+				}
+				else 
+				{
+					break;
+				}
+
+				packet.tcp_len[0] = *(pkt_data+46)>>4;
+
+				//packet.tcp_len[0] = 4>>*(pkt_data+46);
+				printf("------%d--",packet.tcp_len[0]);
 
 			//	printf("%x",*(pkt_data_protocol));
 				//else if ()
