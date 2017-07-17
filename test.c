@@ -13,7 +13,6 @@
 		bpf_u_int32 net;		/* Our IP */
 		struct pcap_pkthdr *header;	/* The header that pcap gives us */
 		const u_char *pkt_data;		/* The actual packet */
-	 	const u_char *pkt_data_protocol;
 	 	int i = 0;
 
 		int chk;
@@ -28,7 +27,8 @@
 			u_char des_port[2];
 			u_char chack_tcp[1];
 			u_char tcp_len[1];
-		} packet;
+			u_char data_start[999];
+		}packet;
 
 
 		const u_char *pcap_next(pcap_t *p, struct pcap_pkthdr *h);
@@ -72,10 +72,9 @@
 			if(chk = pcap_next_ex(handle, &header, &pkt_data) >0)
 			{
 
-				pkt_data_protocol = pkt_data ;
 
 				int i;
-				printf("Jacked a packet with length of [%d]\n", header->len);
+			//	printf("Jacked a packet with length of [%d]\n", header->len);
 				int leng = header->len;
 
 				for(int j=0;j<=5;j++)
@@ -129,11 +128,10 @@
 
 				packet.chack_tcp[0] = *(pkt_data+23);
 
-				//printf("%02x\n",packet.chack_tcp[0]);
 
 				if(0x06==(long)packet.chack_tcp[0])
 				{
-					printf("TCP");
+					printf("-----TCP Packet------\n");
 				}
 				else 
 				{
@@ -142,17 +140,16 @@
 
 				packet.tcp_len[0] = *(pkt_data+46)>>4;
 
-				//packet.tcp_len[0] = 4>>*(pkt_data+46);
-				printf("------%d--",packet.tcp_len[0]);
+				for(int j = 34+packet.tcp_len[0],i=0 ;j<=header->len  ;j++,i++)
+				{
+					packet.data_start[i] = *(pkt_data+j);
 
-			//	printf("%x",*(pkt_data_protocol));
-				//else if ()
-
-
+				}
 
 
 
 
+				printf("eht.smac: ");
 				for(int j=0;j<=5;j++)
 				{
 					printf("%02x:", (packet.des_mac[j]));
@@ -160,7 +157,7 @@
 				printf("\n");
 
 
-
+				printf("eth.dmac: ");
 				for(int j=0;j<=5;j++)
 				{
 					printf("%02x:", (packet.src_mac[j]));
@@ -168,6 +165,7 @@
 				}
 				printf("\n");
 
+				printf("ip.sip: ");
 				for(int j=0;j<=3;j++)
 				{
 					printf("%d.", (packet.src_ip[j]));
@@ -175,6 +173,8 @@
 				}
 				printf("\n");
 
+
+				printf("ip.dip: ");
 				for(int j=0;j<=3;j++)
 				{
 					printf("%d.", (packet.des_ip[j]));
@@ -183,9 +183,15 @@
 				printf("\n");
 
 				
-				printf("%d\n", ( (packet.src_port[0]<<8) + (packet.src_port[1]) ));//+ (packet.src_port[1])));//+ packet.src_port[1]));
+				//printf("-----%x,%x---",packet.src_port[0],packet.des_port[1]);
+				
+				printf("tcp.sport: ");
+				printf("%d\n", ( (packet.src_port[0]<<8) + (packet.src_port[1]) ));
+				printf("tcp.dport: ");
+				printf("%d\n", ( (packet.des_port[0]<<8) + (packet.des_port[1]) ));
 
-				printf("%d\n", ( (packet.des_port[0]<<8) + (packet.des_port[1]) ));//+ (packet.src_port[1])));//+ packet.src_port[1]));
+				printf("data:\n");
+				printf("%s\n",packet.data_start);
 
 			}
 
