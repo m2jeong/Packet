@@ -19,15 +19,15 @@
 
 		struct packet 
 		{
-			u_char des_mac[6];	//ethernet des mac
-			u_char src_mac[6];	//ehternet src mas
-			u_char src_ip[6];
-			u_char des_ip[6];
-			u_char src_port[2];
-			u_char des_port[2];
-			u_char chack_tcp[1];
-			u_char tcp_len[1];
-			u_char data_start[999];
+			u_char des_mac[6];	//L2, ethernet des mac
+			u_char src_mac[6];	//L2, ehternet src mac
+			u_char src_ip[6];	//L3, ip src
+			u_char des_ip[6];	//L3, ip des
+			u_char src_port[2];	//L4, TCP src port
+			u_char des_port[2];	//L4 TCP des port
+			u_char chack_tcp[1];	//Is the TCP packet?
+			u_char tcp_len[1];	// TCP Lenth (offset value)
+			u_char data_start[999];	//L5, data
 		}packet;
 
 
@@ -69,7 +69,7 @@
 
 		while(1)
 		{
-			if(chk = pcap_next_ex(handle, &header, &pkt_data) >0)
+			if(chk = pcap_next_ex(handle, &header, &pkt_data) >0) //if, packet get faill, return else loop get packet 
 			{
 
 
@@ -79,14 +79,14 @@
 
 				for(int j=0;j<=5;j++)
 				{
-					packet.des_mac[j] = *(pkt_data+j);
+					packet.des_mac[j] = *(pkt_data+j); //0byte ~ 5byte . des mac
 					//*pkt_data++;
 				}
 				
 				for(int j=6,i=0;j<=11;j++,i++)
 				{
 					
-					packet.src_mac[i] = *(pkt_data+j);
+					packet.src_mac[i] = *(pkt_data+j); //6byte ~ 11byte. src mac
 					//pkt_data++;
 				}
 
@@ -98,7 +98,7 @@
 				for(int j=26,i =0;j<=29;j++,i++)
 				{
 
-					packet.src_ip[i] = *(pkt_data+j);
+					packet.src_ip[i] = *(pkt_data+j); //26byte ~ 29byte. src ip
 					//pkt_data++;
 
 				}
@@ -106,14 +106,14 @@
 				for(int j=30,i=0;j<=33;j++,i++)
 				{
 
-					packet.des_ip[i] = *(pkt_data+j);
+					packet.des_ip[i] = *(pkt_data+j); //30byte ~ 33byte. des ip
 					//pkt_data++;
 
 				}
 				for(int j=34,i=0;j<=35;j++,i++)
 				{
 
-					packet.src_port[i] = *(pkt_data+j);
+					packet.src_port[i] = *(pkt_data+j); //32byte~ 35byte. src port
 					//pkt_data++;
 
 				}
@@ -121,38 +121,40 @@
 				for(int j=36,i=0;j<=37;j++,i++)
 				{
 
-					packet.des_port[i] = *(pkt_data+j);
+					packet.des_port[i] = *(pkt_data+j); //36byte ~ 37byte des port
 					//pkt_data++;
 
 				}
 
-				packet.chack_tcp[0] = *(pkt_data+23);
+				packet.chack_tcp[0] = *(pkt_data+23); //23 byte. if this value is 0x06(16), TCP packet
 
 
 				if(0x06==(long)packet.chack_tcp[0])
 				{
-					printf("-----TCP Packet------\n");
+					printf("-----TCP Packet------\n"); //TCP packet marking
 				}
 				else 
 				{
-					break;
+					break; //not TCP packet is drop
 				}
 
-				packet.tcp_len[0] = *(pkt_data+46)>>4;
+				packet.tcp_len[0] = *(pkt_data+46)>>4; //tcp_lenth (offset) is 4bit. but, array tcp_len[0] is 1byte.
+									//so, right shift 4bit result, 1st 4 bit zero padding
 
 				for(int j = 34+packet.tcp_len[0],i=0 ;j<=header->len  ;j++,i++)
 				{
-					packet.data_start[i] = *(pkt_data+j);
+					packet.data_start[i] = *(pkt_data+j); //network L3 end is 34byte. so, data start is 34byte + TCP header lenth
+					
 
 				}
 
-
+/////////////////////////print////////////////////
 
 
 				printf("eht.smac: ");
 				for(int j=0;j<=5;j++)
 				{
-					printf("%02x:", (packet.des_mac[j]));
+					printf("%02x:", (packet.des_mac[j])); //print des mac for 0x(16)
 				}
 				printf("\n");
 
@@ -160,7 +162,7 @@
 				printf("eth.dmac: ");
 				for(int j=0;j<=5;j++)
 				{
-					printf("%02x:", (packet.src_mac[j]));
+					printf("%02x:", (packet.src_mac[j])); //print src mac for 0x(16)
 				
 				}
 				printf("\n");
@@ -168,7 +170,7 @@
 				printf("ip.sip: ");
 				for(int j=0;j<=3;j++)
 				{
-					printf("%d.", (packet.src_ip[j]));
+					printf("%d.", (packet.src_ip[j])); //print src ip . for split 1byte to %d(10)
 				
 				}
 				printf("\n");
@@ -177,7 +179,7 @@
 				printf("ip.dip: ");
 				for(int j=0;j<=3;j++)
 				{
-					printf("%d.", (packet.des_ip[j]));
+					printf("%d.", (packet.des_ip[j]));  //print des ip . for %d(10)
 				
 				}
 				printf("\n");
@@ -187,9 +189,16 @@
 				
 				printf("tcp.sport: ");
 				printf("%d\n", ( (packet.src_port[0]<<8) + (packet.src_port[1]) ));
+				// if, src_port is e4da so, src_port[0] left shift zero padding.  e4 -> 0xe400(16)
+								// + 0xda(16)
+				
 				printf("tcp.dport: ");
 				printf("%d\n", ( (packet.des_port[0]<<8) + (packet.des_port[1]) ));
+				
+				//same algorithm for src port
 
+				
+				//print data
 				printf("data:\n");
 				printf("%s\n",packet.data_start);
 
@@ -200,7 +209,7 @@
 
 
 			
-
+			//if fail reseve packet, close handle and return
 			else
 			{
 				pcap_close(handle);
@@ -209,6 +218,7 @@
 		}
 
 
+		 //end. close handle and return
 
 
 		pcap_close(handle);
