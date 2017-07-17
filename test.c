@@ -5,7 +5,7 @@
 	 int main(int argc, char *argv[])
 	 {
 		pcap_t *handle;			/* Session handle */
-		char *dev;			/* The device to sniff on */
+		char *dev="ens33";			/* The device to sniff on */
 		char errbuf[PCAP_ERRBUF_SIZE];	/* Error string */
 		struct bpf_program fp;		/* The compiled filter */
 		char filter_exp[] = "port 80";	/* The filter expression */
@@ -13,6 +13,8 @@
 		bpf_u_int32 net;		/* Our IP */
 		struct pcap_pkthdr *header;	/* The header that pcap gives us */
 		const u_char *pkt_data;		/* The actual packet */
+	 	const u_char *pkt_data_protocol;
+	 	int i = 0;
 
 		int chk;
 
@@ -22,6 +24,9 @@
 			u_char src_mac[6];
 			u_char src_ip[6];
 			u_char des_ip[6];
+			u_char src_port[2];
+			u_char des_port[2];
+			u_char chack_tcp[1];
 		} packet;
 
 
@@ -65,43 +70,74 @@
 		{
 			if(chk = pcap_next_ex(handle, &header, &pkt_data) >0)
 			{
+
+				pkt_data_protocol = pkt_data ;
+
 				int i;
 				printf("Jacked a packet with length of [%d]\n", header->len);
 				int leng = header->len;
 
 				for(int j=0;j<=5;j++)
 				{
-					packet.des_mac[j] = *(pkt_data);
-					pkt_data++;
+					packet.des_mac[j] = *(pkt_data+j);
+					//*pkt_data++;
 				}
-
-
-				for(int j=0;j<=5;j++)
+				
+				for(int j=6,i=0;j<=11;j++,i++)
 				{
-					packet.src_mac[j] = *(pkt_data);
-					pkt_data++;
+					
+					packet.src_mac[i] = *(pkt_data+j);
+					//pkt_data++;
 				}
 
-				pkt_data += 14;
+				//pkt_data += 14;
 
 				//printf("---%d---\n",*pkt_data );
 
 
-				for(int j=0;j<=3;j++)
+				for(int j=26,i =0;j<=29;j++,i++)
 				{
 
-					packet.src_ip[j] = *(pkt_data);
-					pkt_data++;
+					packet.src_ip[i] = *(pkt_data+j);
+					//pkt_data++;
 
 				}
 
-				for(int j=0;j<=3;j++)
+				for(int j=30,i=0;j<=33;j++,i++)
 				{
 
-					packet.des_ip[j] = *(pkt_data);
-					pkt_data++;
+					packet.des_ip[i] = *(pkt_data+j);
+					//pkt_data++;
 
 				}
+				for(int j=34,i=0;j<=35;j++,i++)
+				{
+
+					packet.src_port[i] = *(pkt_data+j);
+					//pkt_data++;
+
+				}
+
+				for(int j=36,i=0;j<=37;j++,i++)
+				{
+
+					packet.des_port[i] = *(pkt_data+j);
+					//pkt_data++;
+
+				}
+
+				packet.chack_tcp[0] = *(pkt_data+23);
+
+				printf("%02x\n",packet.chack_tcp[0]);
+
+				if(0x06==(long)packet.chack_tcp)
+					printf("TCP");
+
+			//	printf("%x",*(pkt_data_protocol));
+				//else if ()
+
+
+
 
 
 
@@ -134,6 +170,10 @@
 				}
 				printf("\n");
 
+				
+				printf("%d\n", ( (packet.src_port[0]<<8) + (packet.src_port[1]) ));//+ (packet.src_port[1])));//+ packet.src_port[1]));
+
+				printf("%d\n", ( (packet.des_port[0]<<8) + (packet.des_port[1]) ));//+ (packet.src_port[1])));//+ packet.src_port[1]));
 
 			}
 
