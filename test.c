@@ -141,10 +141,10 @@
 				packet.tcp_len[0] = *(pkt_data+46)>>4; //tcp_lenth (offset) is 4bit. but, array tcp_len[0] is 1byte.
 									//so, right shift 4bit result, 1st 4 bit zero padding
 
-				for(int j = 34+packet.tcp_len[0],i=0 ;j<=header->len  ;j++,i++)
+				for(int j = 34+(packet.tcp_len[0]*4),i=0 ;j<=header->len  ;j++,i++)
 				{
 					packet.data_start[i] = *(pkt_data+j); //network L3 end is 34byte. so, data start is 34byte + TCP header lenth
-					
+										//4byte .so *4
 
 				}
 
