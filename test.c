@@ -19,8 +19,8 @@
 
 		struct packet 
 		{
-			u_char des_mac[6]; 
-			u_char src_mac[6];
+			u_char des_mac[6];	//ethernet des mac
+			u_char src_mac[6];	//ehternet src mas
 			u_char src_ip[6];
 			u_char des_ip[6];
 			u_char src_port[2];
