@@ -144,7 +144,7 @@
 				for(int j = 34+(packet.tcp_len[0]*4),i=0 ;j<=header->len  ;j++,i++)
 				{
 					packet.data_start[i] = *(pkt_data+j); //network L3 end is 34byte. so, data start is 34byte + TCP header lenth
-										//4byte .so *4
+										//4byte unit .so *4
 
 				}
 
