@@ -26,6 +26,7 @@
 			uint8_t des_ip[6];	//L3, ip des
 			uint8_t ipv4_check[2];
 			uint8_t ip_len[1];
+			uint8_t total_len[2];
 			uint8_t src_port[2];	//L4, TCP src port
 			uint8_t des_port[2];	//L4 TCP des port
 			uint8_t chack_tcp[1];	//Is the TCP packet?
@@ -112,7 +113,12 @@
 
 				packet.ip_len[0] = packet.ip_len[0]<<4;
 				packet.ip_len[0] = packet.ip_len[0]>>4;
-				printf("--------%d",packet.ip_len[0]);
+
+				for(int j=16,i=0;j<=17;i++,j++)
+				{
+					packet.total_len[i] = *(pkt_data+j);
+				}
+
 
 
 				//pkt_data += 14;
@@ -166,7 +172,7 @@
 				packet.tcp_len[0] = *(pkt_data+46)>>4; //tcp_lenth (offset) is 4bit. but, array tcp_len[0] is 1byte.
 									//so, right shift 4bit result, 1st 4 bit zero padding
 
-				for(int j = (packet.ip_len[0]*4+(packet.tcp_len[0]*4),i=0 ;j<=header->len  ;j++,i++)
+				for(int j = (packet.ip_len[0]*4)+(packet.tcp_len[0]*4),i=0 ;j<=((int)packet.total_len[0]<<8) + packet.total_len[1] ;j++,i++)
 				{
 					packet.data_start[i] = *(pkt_data+j); //network L3 end is 34byte. so, data start is 34byte + TCP header lenth
 										//4byte unit .so *4
@@ -233,12 +239,12 @@
 				//	printf("%x ", *(pkt_data + i) & 0xff);
 
 
-			
+			else if (chk = pcap_next_ex(handle, &header, &pkt_data)==0)
+				continue;
 			//if fail reseve packet, close handle and return
-			else
+			else if(chk = pcap_next_ex(handle, &header, &pkt_data)<0)
 			{
-				pcap_close(handle);
-				return (0);
+				break;
 			}
 		}
 
