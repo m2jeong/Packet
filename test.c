@@ -1,6 +1,7 @@
 	
 	 #include <pcap.h>
 	 #include <stdio.h>
+	 #include <stdint.h>
 
 	 int main(int argc, char *argv[])
 	 {
@@ -19,15 +20,17 @@
 
 		struct packet 
 		{
-			u_char des_mac[6];	//L2, ethernet des mac
-			u_char src_mac[6];	//L2, ehternet src mac
-			u_char src_ip[6];	//L3, ip src
-			u_char des_ip[6];	//L3, ip des
-			u_char src_port[2];	//L4, TCP src port
-			u_char des_port[2];	//L4 TCP des port
-			u_char chack_tcp[1];	//Is the TCP packet?
-			u_char tcp_len[1];	// TCP Lenth (offset value)
-			u_char data_start[999];	//L5, data
+			uint8_t des_mac[6];	//L2, ethernet des mac
+			uint8_t src_mac[6];	//L2, ehternet src mac
+			uint8_t src_ip[6];	//L3, ip src
+			uint8_t des_ip[6];	//L3, ip des
+			uint8_t ipv4_check[2];
+			uint8_t ip_len[1];
+			uint8_t src_port[2];	//L4, TCP src port
+			uint8_t des_port[2];	//L4 TCP des port
+			uint8_t chack_tcp[1];	//Is the TCP packet?
+			uint8_t tcp_len[1];	// TCP Lenth (offset value)
+			uint8_t data_start[999];	//L5, data
 		}packet;
 
 
@@ -90,6 +93,28 @@
 					//pkt_data++;
 				}
 
+				for(int j=12,i=0;j<=13;i++,j++)
+				{
+					packet.ipv4_check[i] = *(pkt_data+j);
+				}
+
+
+				if((int)packet.ipv4_check[0]==0x08&&(int)packet.ipv4_check[1]==0x00)
+				{
+					
+				}
+				else
+				{
+					break;
+				}
+
+				packet.ip_len[0] = *(pkt_data+14);
+
+				packet.ip_len[0] = packet.ip_len[0]<<4;
+				packet.ip_len[0] = packet.ip_len[0]>>4;
+				printf("--------%d",packet.ip_len[0]);
+
+
 				//pkt_data += 14;
 
 				//printf("---%d---\n",*pkt_data );
@@ -141,7 +166,7 @@
 				packet.tcp_len[0] = *(pkt_data+46)>>4; //tcp_lenth (offset) is 4bit. but, array tcp_len[0] is 1byte.
 									//so, right shift 4bit result, 1st 4 bit zero padding
 
-				for(int j = 34+(packet.tcp_len[0]*4),i=0 ;j<=header->len  ;j++,i++)
+				for(int j = (packet.ip_len[0]*4+(packet.tcp_len[0]*4),i=0 ;j<=header->len  ;j++,i++)
 				{
 					packet.data_start[i] = *(pkt_data+j); //network L3 end is 34byte. so, data start is 34byte + TCP header lenth
 										//4byte unit .so *4
@@ -188,12 +213,12 @@
 				//printf("-----%x,%x---",packet.src_port[0],packet.des_port[1]);
 				
 				printf("tcp.sport: ");
-				printf("%d\n", ( (packet.src_port[0]<<8) + (packet.src_port[1]) ));
+				printf("%d\n", ( ((int)packet.src_port[0]<<8) + (packet.src_port[1]) ));
 				// if, src_port is e4da so, src_port[0] left shift zero padding.  e4 -> 0xe400(16)
 								// + 0xda(16)
 				
 				printf("tcp.dport: ");
-				printf("%d\n", ( (packet.des_port[0]<<8) + (packet.des_port[1]) ));
+				printf("%d\n", ( ((int)packet.des_port[0]<<8) + (packet.des_port[1]) ));
 				
 				//same algorithm for src port
 
